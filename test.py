@@ -52,10 +52,16 @@ def aguardar_carregamento(driver):
 def acessar_jupiter(driver):
     """Abre a página principal"""
     driver.get("https://uspdigital.usp.br/jupiterweb/jupCarreira.jsp?codmnu=8275")
-    WebDriverWait(driver, timeout=10).until(
-        lambda d: len(d.find_elements(By.ID, "comboUnidade")) > 0
-    )
     print(f"Acessando: {driver.title}")
+
+def esperar_options_validos(driver, seletor_id, timeout=10):
+    def _options_validos(driver):
+        seletor = driver.find_element(By.ID, seletor_id)
+        options = seletor.find_elements(By.TAG_NAME, "option")
+        # Filtra options que não são vazias nem placeholders
+        valid_options = [opt for opt in options if opt.text.strip() and "Selecione" not in opt.text]
+        return len(valid_options) > 0
+    WebDriverWait(driver, timeout).until(_options_validos)
 
 def coletar_dados():
     start = time.time()
@@ -65,7 +71,9 @@ def coletar_dados():
     try:
         acessar_jupiter(driver)
 
-        seletorUnidades = driver.find_element(By.ID, "comboUnidade")
+        seletorUnidades = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "comboUnidade"))
+        )
         seletorCursos = driver.find_element(By.ID, "comboCurso")
         botaoEnviar = driver.find_element(By.ID, "enviar")
         botaoBuscar = driver.find_element(By.ID, "step1-tab")
@@ -79,11 +87,13 @@ def coletar_dados():
                 continue
 
             print(f"{nome_unidade}:")
-
             unidade = Unidade(nome_unidade)
-            unidade_elem.click()
 
+            unidade_elem.click()
+            esperar_options_validos(driver, "comboCurso", timeout=10)
+            seletorCursos = driver.find_element(By.ID, "comboCurso")
             cursos_elem = seletorCursos.find_elements(By.TAG_NAME, "option")
+
             for curso_elem in cursos_elem:
                 nome_curso = curso_elem.text.strip()
                 if not nome_curso:
@@ -103,30 +113,29 @@ def coletar_dados():
 
                     driver.find_element(By.ID, "step4-tab").click()
                     aguardar_carregamento(driver)
-
-                    WebDriverWait(driver, timeout=10).until(
-                        lambda d: len(d.find_elements(By.CLASS_NAME, "disciplina")) > 0
-                    )
-
-                    html_content = driver.page_source
-                    soup = BeautifulSoup(html_content, "html.parser")
-                    # Processar as disciplinas com o BeautifulSoup
-
-                    # curso = Curso(nome_curso, ...)
-                    # unidade.cursos.append(curso)
-
-                    print(f"  -> [OK] {nome_curso}")
-
+                    try:
+                        WebDriverWait(driver, 1).until(
+                            lambda d: len(d.find_elements(By.CLASS_NAME, "disciplina")) > 0
+                        )
+                        # Se passou daqui, tem disciplinas
+                        html_content = driver.page_source
+                        soup = BeautifulSoup(html_content, "html.parser")
+                        # Processa as disciplinas normalmente
+                        print(f"  -> [OK] {nome_curso}")
+                    except:
+                        # Curso sem disciplinas
+                        print(f"  -> [Ok] {nome_curso} (não tem disciplinas)")
                 except Exception as e:
                     print(f"  -> [Erro] {nome_curso}: {e}")
                 finally:
+                    aguardar_carregamento(driver)
                     botaoBuscar.click()
 
             resultado_unidades.append(unidade)
 
     finally:
         driver.quit()
-        print(f"\nBusca concluída em {time.time() - start:.2f} segundos.")
+        print(f"\nPrograma finalizado em {time.time() - start:.2f} segundos.")
 
 if __name__ == "__main__":
     coletar_dados()
