@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+import sys
 from bs4 import BeautifulSoup
 import time
 
@@ -37,6 +38,10 @@ class Disciplina:
         self.cargaHorariaPraticas = cargaHorariaPraticas
         self.atividadesAprofundamento = atividadesAprofundamento
 
+def clamp(value, min_value, max_value):
+    """Prende um valor entre um limite inferior e superior"""
+    return max(min_value, min(value, max_value))
+
 def iniciar_driver(tipo):
     """Inicializa o driver"""
     return webdriver.Chrome() if tipo == 0 else webdriver.Firefox()
@@ -52,7 +57,7 @@ def aguardar_carregamento(driver):
 def acessar_jupiter(driver):
     """Abre a página principal"""
     driver.get("https://uspdigital.usp.br/jupiterweb/jupCarreira.jsp?codmnu=8275")
-    print(f"Acessando: {driver.title}")
+    print(f"Driver aberto em {driver.title}, coletando dados...")
 
 def esperar_options_validos(driver, seletor_id, timeout=10):
     def _options_validos(driver):
@@ -63,10 +68,10 @@ def esperar_options_validos(driver, seletor_id, timeout=10):
         return len(valid_options) > 0
     WebDriverWait(driver, timeout).until(_options_validos)
 
-def coletar_dados():
+def coletar_dados(quantidade = None):
     start = time.time()
     driver = iniciar_driver(1)
-    print("Abrindo o driver...\n")
+    print("Abrindo o driver... ", end='')
 
     try:
         acessar_jupiter(driver)
@@ -81,32 +86,29 @@ def coletar_dados():
         lista_unidades = seletorUnidades.find_elements(By.TAG_NAME, "option")
         resultado_unidades = []
 
-        for unidade_elem in lista_unidades:
-            nome_unidade = unidade_elem.text.strip()
-            if not nome_unidade:
-                continue
+        qnt = len(lista_unidades) if not quantidade else clamp(int(quantidade) + 1, 0, len(lista_unidades))
+        
+        for i in range(1, qnt):
+            nome_unidade = lista_unidades[i].text.strip()
 
             print(f"{nome_unidade}:")
             unidade = Unidade(nome_unidade)
 
-            unidade_elem.click()
+            lista_unidades[i].click()
             esperar_options_validos(driver, "comboCurso", timeout=10)
             seletorCursos = driver.find_element(By.ID, "comboCurso")
-            cursos_elem = seletorCursos.find_elements(By.TAG_NAME, "option")
+            lista_cursos = seletorCursos.find_elements(By.TAG_NAME, "option")
+            for j in range(1, len(lista_cursos)):
+                nome_curso = lista_cursos[j].text.strip()
 
-            for curso_elem in cursos_elem:
-                nome_curso = curso_elem.text.strip()
-                if not nome_curso:
-                    continue
-
-                curso_elem.click()
+                lista_cursos[j].click()
                 botaoEnviar.click()
 
                 try:
                     aguardar_carregamento(driver)
 
                     if driver.find_elements(By.CLASS_NAME, "ui-widget-overlay"):
-                        print(f"  -> [Erro] Falha ao recuperar {nome_curso}")
+                        print(f"  -> [Dados não encontrados] {nome_curso}")
                         fechar = driver.find_element(By.CLASS_NAME, "ui-dialog-buttonset").find_element(By.CLASS_NAME, "ui-button")
                         fechar.click()
                         continue
@@ -135,7 +137,14 @@ def coletar_dados():
 
     finally:
         driver.quit()
-        print(f"\nPrograma finalizado em {time.time() - start:.2f} segundos.")
+        print(f"Dados coletados em {time.time() - start:.2f} segundos.")
 
 if __name__ == "__main__":
-    coletar_dados()
+    if len(sys.argv) == 1:
+        coletar_dados()
+    elif len(sys.argv) == 2:
+        unidadesLidas = sys.argv[1]
+        coletar_dados(unidadesLidas)
+    else:
+        print("Uso: python test.py [qtd_unidades]")
+    sys.exit()
