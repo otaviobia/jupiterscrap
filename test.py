@@ -13,6 +13,23 @@ class Unidade:
     def __init__(self, nome):
         self.nome = nome
         self.cursos = []
+    
+    def listar_cursos(self, arquivo): 
+        encontrou = False 
+        with open(arquivo, "r") as f: 
+            for linha in f: 
+                elemento = linha.split() 
+                if(encontrou == False): 
+                    for palavra in elemento: 
+                        if(palavra == self.nome):
+                            encontrou = True 
+                            break
+                else: 
+                    palavra = linha.split()
+                    if(palavra[0] == '->'): 
+                        self.cursos.append(linha[10:])
+                    else: 
+                        return self.cursos
 
 class Curso:
     """Representa um curso oferecido por uma unidade da USP"""
@@ -149,29 +166,10 @@ def coletar_dados(quantidade = None):
     #6)Outras consultas que você ache relevantes.
 
 
-def listar_cursos(arquivo, unidade): 
-    encontrou = False 
-    with open(arquivo, "r") as f: 
-        for linha in f: 
-            elemento = linha.split() 
-            if(encontrou == False): 
-                for palavra in elemento: 
-                    if(palavra == unidade):
-                        encontrou = True 
-                        break
-            else: 
-                palavra = linha.split()
-                if(palavra[0] == '->'): 
-                    print(linha[10:])
-                else: 
-                    return 
+
         
                 
-                                
-            
-    
-
-
+                            
 
 if __name__ == "__main__":
     #if len(sys.argv) == 1:
@@ -180,6 +178,10 @@ if __name__ == "__main__":
         #unidadesLidas = sys.argv[1]
         #coletar_dados(unidadesLidas)
     #else:
-    listar_cursos("rodado1.txt", "EESC")
+    unidade = Unidade("EESC") 
+    cursos = unidade.listar_cursos("rodado1.txt")
+
+    for curso in cursos: 
+        print(curso)
         #print("Uso: python test.py [qtd_unidades]")
     #sys.exit()
