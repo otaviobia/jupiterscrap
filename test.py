@@ -138,13 +138,48 @@ def coletar_dados(quantidade = None):
     finally:
         driver.quit()
         print(f"Dados coletados em {time.time() - start:.2f} segundos.")
+    
+
+    #TODO
+    #1)Listar curso por unidade 
+    #2)Filtrar dados de um determinado curso 
+    #3)Dados de todos os cursos
+    #4)Dados de uma disciplina, inclusive quais cursos ela faz parte
+    #5)Disciplinas que são usadas em mais de um curso
+    #6)Outras consultas que você ache relevantes.
+
+
+def listar_cursos(arquivo, unidade): 
+    encontrou = False 
+    with open(arquivo, "r") as f: 
+        for linha in f: 
+            elemento = linha.split() 
+            if(encontrou == False): 
+                for palavra in elemento: 
+                    if(palavra == unidade):
+                        encontrou = True 
+                        break
+            else: 
+                palavra = linha.split()
+                if(palavra[0] == '->'): 
+                    print(linha[10:])
+                else: 
+                    return 
+        
+                
+                                
+            
+    
+
+
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        coletar_dados()
-    elif len(sys.argv) == 2:
-        unidadesLidas = sys.argv[1]
-        coletar_dados(unidadesLidas)
-    else:
-        print("Uso: python test.py [qtd_unidades]")
-    sys.exit()
+    #if len(sys.argv) == 1:
+        #coletar_dados()
+    #elif len(sys.argv) == 2:
+        #unidadesLidas = sys.argv[1]
+        #coletar_dados(unidadesLidas)
+    #else:
+    listar_cursos("rodado1.txt", "EESC")
+        #print("Uso: python test.py [qtd_unidades]")
+    #sys.exit()
