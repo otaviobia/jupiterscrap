@@ -155,6 +155,22 @@ def coletar_dados(quantidade = None):
     finally:
         driver.quit()
         print(f"Dados coletados em {time.time() - start:.2f} segundos.")
+
+    return resultado_unidades 
+
+
+def listar_curso(resultado_unidades, sigla):
+
+    for unidade in resultado_unidades: 
+        if(sigla == unidade.nome): 
+            resultados_cursos = (unidade.cursos).copy()
+            return resultados_cursos
+    
+    return None 
+
+
+    
+
     
 
     #TODO
@@ -165,23 +181,14 @@ def coletar_dados(quantidade = None):
     #5)Disciplinas que são usadas em mais de um curso
     #6)Outras consultas que você ache relevantes.
 
-
-
-        
-                
-                            
+ 
 
 if __name__ == "__main__":
-    #if len(sys.argv) == 1:
-        #coletar_dados()
-    #elif len(sys.argv) == 2:
-        #unidadesLidas = sys.argv[1]
-        #coletar_dados(unidadesLidas)
-    #else:
-    unidade = Unidade("EESC") 
-    cursos = unidade.listar_cursos("rodado1.txt")
-
-    for curso in cursos: 
-        print(curso)
-        #print("Uso: python test.py [qtd_unidades]")
-    #sys.exit()
+    if len(sys.argv) == 1:
+        coletar_dados()
+    elif len(sys.argv) == 2:
+        unidadesLidas = sys.argv[1]
+        coletar_dados(unidadesLidas)
+    else:
+        print("Uso: python test.py [qtd_unidades]")
+    sys.exit()
