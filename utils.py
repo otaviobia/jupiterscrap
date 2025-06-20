@@ -4,51 +4,11 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 import sys
+from Curso import Curso 
+from Unidade import Unidade 
+from Disciplina import Disciplina
 from bs4 import BeautifulSoup
 import time
-
-# Cria classes representando os dados
-class Unidade:
-    """Representa uma unidade da USP (ex: IME, Poli, etc.)"""
-    def __init__(self, nome):
-        self.nome = nome
-        self.cursos = []
-
-    #Função para inserir os cursos 
-    def inserir_cursos(self, lista_cursos): 
-        for curso in lista_cursos: 
-            self.cursos.append(curso)
-
-    def getNome(self): 
-        return self.nome
-    
-    def getCursos(self): 
-        return self.cursos
-    
-
-class Curso:
-    """Representa um curso oferecido por uma unidade da USP"""
-    def __init__(self, nome, unidade, durIdeal, durMin, durMax, disObr, disOptLiv, disOptEle):
-        self.nome = nome
-        self.unidade = unidade
-        self.durIdeal = durIdeal
-        self.durMin = durMin
-        self.durMax = durMax
-        self.disObr = disObr
-        self.disOptLiv = disOptLiv
-        self.disOptEle = disOptEle
-
-class Disciplina:
-    """Representa uma disciplina cadastrada na grade curricular"""
-    def __init__(self, codigo, nome, creditosAula, creditosTrabalho, cargaHoraria, cargaHorariaEstagio, cargaHorariaPraticas, atividadesAprofundamento):
-        self.codigo = codigo
-        self.nome = nome
-        self.creditosAula = creditosAula
-        self.creditosTrabalho = creditosTrabalho
-        self.cargaHoraria = cargaHoraria
-        self.cargaHorariaEstagio = cargaHorariaEstagio
-        self.cargaHorariaPraticas = cargaHorariaPraticas
-        self.atividadesAprofundamento = atividadesAprofundamento
 
 def clamp(value, min_value, max_value):
     """Prende um valor entre um limite inferior e superior"""
@@ -137,14 +97,8 @@ def coletar_dados(quantidade = None):
 
 
                         #Dados das disciplinas
-                        disciplina = dados_disciplinas(soup)
-                        info_curso = dados_curso(soup) 
-
-
-                        
-
-
-                            
+                        disciplinas = dados_disciplinas(soup)
+                        info_curso = dados_curso(soup)     
 
 
                         # Processa as disciplinas normalmente
@@ -176,30 +130,32 @@ def converter_int(value):
 
 def dados_disciplinas(soup): 
 
+    listar_disciplinas = []
     div_grade = soup.find('div', id = 'gradeCurricular') 
                         
     if div_grade: 
         for linha in div_grade.find_all('tr'): 
             celulas = linha.find_all('td') 
-        if len(celulas) == 1 and celulas[0].get('colspan') == '8': 
-            continue
-        
-        if len(celulas) > 1 and celulas[0].get('colspan') == '2': 
-            continue 
-        
-        if len(celulas) == 8: 
-            codigo = celulas[0].text.strip() 
-            nome = celulas[1].text.strip() 
-            cred_aula = converter_int(celulas[2].text.strip())
-            cred_trab = converter_int(celulas[3].text.strip())
-            carga_horaria = converter_int(celulas[4].text.strip())
-            ce = converter_int(celulas[5].text.strip()) 
-            cp = converter_int(celulas[6].text.strip())
-            atpa = converter_int(celulas[7].text.strip()) 
-        
-        disciplina = Disciplina(codigo, nome, cred_aula, cred_trab, carga_horaria, ce, cp, atpa) 
+            if len(celulas) == 1 and celulas[0].get('colspan') == '8': 
+                continue
+            
+            if len(celulas) > 1 and celulas[0].get('colspan') == '2': 
+                continue 
+            
+            if len(celulas) == 8: 
+                codigo = celulas[0].text.strip() 
+                nome = celulas[1].text.strip() 
+                cred_aula = converter_int(celulas[2].text.strip())
+                cred_trab = converter_int(celulas[3].text.strip())
+                carga_horaria = converter_int(celulas[4].text.strip())
+                ce = converter_int(celulas[5].text.strip()) 
+                cp = converter_int(celulas[6].text.strip())
+                atpa = converter_int(celulas[7].text.strip()) 
+            
+            disciplina = Disciplina(codigo, nome, cred_aula, cred_trab, carga_horaria, ce, cp, atpa)
+            listar_disciplinas.append(disciplina) 
 
-    return disciplina
+    return listar_disciplinas
 
 def dados_curso(soup): 
     div_curso = soup.find('div', id="step4") 
@@ -232,25 +188,3 @@ def listar_curso(resultado_unidades, sigla):
             return resultados_cursos
     
     return None 
-
-
-
-    #TODO
-    #1)Listar curso por unidade (x)
-    #2)Filtrar dados de um determinado curso 
-    #3)Dados de todos os cursos
-    #4)Dados de uma disciplina, inclusive quais cursos ela faz parte
-    #5)Disciplinas que são usadas em mais de um curso
-    #6)Outras consultas que você ache relevantes.
-
- 
-
-if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        coletar_dados()
-    elif len(sys.argv) == 2:
-        unidadesLidas = sys.argv[1]
-        coletar_dados(unidadesLidas)
-    else:
-        print("Uso: python test.py [qtd_unidades]")
-    sys.exit()
