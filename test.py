@@ -13,23 +13,18 @@ class Unidade:
     def __init__(self, nome):
         self.nome = nome
         self.cursos = []
+
+    #Função para inserir os cursos 
+    def inserir_cursos(self, lista_cursos): 
+        for curso in lista_cursos: 
+            self.cursos.append(curso)
+
+    def getNome(self): 
+        return self.nome
     
-    def listar_cursos(self, arquivo): 
-        encontrou = False 
-        with open(arquivo, "r") as f: 
-            for linha in f: 
-                elemento = linha.split() 
-                if(encontrou == False): 
-                    for palavra in elemento: 
-                        if(palavra == self.nome):
-                            encontrou = True 
-                            break
-                else: 
-                    palavra = linha.split()
-                    if(palavra[0] == '->'): 
-                        self.cursos.append(linha[10:])
-                    else: 
-                        return self.cursos
+    def getCursos(self): 
+        return self.cursos
+    
 
 class Curso:
     """Representa um curso oferecido por uma unidade da USP"""
@@ -139,6 +134,19 @@ def coletar_dados(quantidade = None):
                         # Se passou daqui, tem disciplinas
                         html_content = driver.page_source
                         soup = BeautifulSoup(html_content, "html.parser")
+
+
+                        #Dados das disciplinas
+                        disciplina = dados_disciplinas(soup)
+                        info_curso = dados_curso(soup) 
+
+
+                        
+
+
+                            
+
+
                         # Processa as disciplinas normalmente
                         print(f"  -> [OK] {nome_curso}")
                     except:
@@ -159,22 +167,76 @@ def coletar_dados(quantidade = None):
     return resultado_unidades 
 
 
+#Funções adicionadas 
+def converter_int(value):
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return 0
+
+def dados_disciplinas(soup): 
+
+    div_grade = soup.find('div', id = 'gradeCurricular') 
+                        
+    if div_grade: 
+        for linha in div_grade.find_all('tr'): 
+            celulas = linha.find_all('td') 
+        if len(celulas) == 1 and celulas[0].get('colspan') == '8': 
+            continue
+        
+        if len(celulas) > 1 and celulas[0].get('colspan') == '2': 
+            continue 
+        
+        if len(celulas) == 8: 
+            codigo = celulas[0].text.strip() 
+            nome = celulas[1].text.strip() 
+            cred_aula = converter_int(celulas[2].text.strip())
+            cred_trab = converter_int(celulas[3].text.strip())
+            carga_horaria = converter_int(celulas[4].text.strip())
+            ce = converter_int(celulas[5].text.strip()) 
+            cp = converter_int(celulas[6].text.strip())
+            atpa = converter_int(celulas[7].text.strip()) 
+        
+        disciplina = Disciplina(codigo, nome, cred_aula, cred_trab, carga_horaria, ce, cp, atpa) 
+
+    return disciplina
+
+def dados_curso(soup): 
+    div_curso = soup.find('div', id="step4") 
+    
+    if not div_curso:
+        return None
+
+    # Extrai cada informação usando a função auxiliar
+    unidade = get_span_text(div_curso, 'unidade')
+    nome_curso = get_span_text(div_curso, 'curso')
+    dur_ideal = get_span_text(div_curso, 'duridlhab')
+    dur_min = get_span_text(div_curso, 'durminhab')
+    dur_max = get_span_text(div_curso, 'durmaxhab')
+
+    info_curso = Curso(curso, unidade, dur_ideal, dur_min, dur_max)
+    
+    return info_curso
+    
+
+def get_span_text(parent_tag, class_name):
+    element = parent_tag.find('span', class_=class_name)
+    return element.get_text(strip=True) if element else ""     
+
+
 def listar_curso(resultado_unidades, sigla):
 
     for unidade in resultado_unidades: 
-        if(sigla == unidade.nome): 
-            resultados_cursos = (unidade.cursos).copy()
+        if(sigla == unidade.getNome()): 
+            resultados_cursos = (unidade.getCursos()).copy()
             return resultados_cursos
     
     return None 
 
 
-    
-
-    
 
     #TODO
-    #1)Listar curso por unidade 
+    #1)Listar curso por unidade (x)
     #2)Filtrar dados de um determinado curso 
     #3)Dados de todos os cursos
     #4)Dados de uma disciplina, inclusive quais cursos ela faz parte
