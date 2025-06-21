@@ -65,9 +65,9 @@ def coletar_dados(quantidade = None):
         acessar_jupiter(driver)
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "comboUnidade")))
         
-        print("Aguardando carregamento da lista de unidades...")
+        print("Aguardando carregamento da lista de unidades... ", end='', flush=True)
         esperar_options_validos(driver, "comboUnidade", timeout=20)
-        print("Lista de unidades carregada. Iniciando coleta.")
+        print("Lista de unidades carregada. Iniciando coleta...")
 
         botaoEnviar = driver.find_element(By.ID, "enviar")
         botaoBuscar = driver.find_element(By.ID, "step1-tab")
@@ -150,7 +150,7 @@ def coletar_dados(quantidade = None):
             
             resultado_unidades.append(unidade)
 
-        print("".ljust(padding_final))
+        print("".ljust(padding_final), end='\r')
 
     finally:
         execution_time = time.time() - start
@@ -205,9 +205,8 @@ def exibir_lista_unidades(resultado_unidades):
         return None
 
     print("-" * 100)
-    print("Selecione uma unidade pelo número, sigla ou nome:")
     for i, nome in enumerate(nomes_unidades, 1):
-        print(f"  [{i}] {nome}")
+        print(f"[{i}] {nome}")
     
     return nomes_unidades
 
@@ -225,7 +224,6 @@ def obter_cursos_por_selecao(resultado_unidades, selecao, nomes_unidades_ordenad
                 acronimo = nome_completo[nome_completo.rfind('(') + 1:-1].strip()
                 if selecao_upper == acronimo:
                     nome_unidade_selecionada = nome_completo
-                    # print(f"\n> Sigla encontrada: '{nome_unidade_selecionada}'")
                     break
             except IndexError:
                 continue
@@ -236,9 +234,10 @@ def obter_cursos_por_selecao(resultado_unidades, selecao, nomes_unidades_ordenad
             num_selecao = int(selecao)
             if 1 <= num_selecao <= len(nomes_unidades_ordenados):
                 nome_unidade_selecionada = nomes_unidades_ordenados[num_selecao - 1]
-                # print(f"\n> Seleção por número: '{nome_unidade_selecionada}'")
             else:
-                print(f"\n> Número '{num_selecao}' é inválido. Tentando buscar por nome...")
+                print("-" * 100)
+                print(f"Número '{num_selecao}' é inválido.")
+                return None
         except ValueError:
             pass
 
@@ -247,9 +246,9 @@ def obter_cursos_por_selecao(resultado_unidades, selecao, nomes_unidades_ordenad
         matches = difflib.get_close_matches(selecao, nomes_unidades_ordenados, n=1, cutoff=0.6)
         if matches:
             nome_unidade_selecionada = matches[0]
-            # print(f"\n> Correspondência por nome encontrada: '{nome_unidade_selecionada}'")
         else:
-            print(f"\n> Nenhuma unidade encontrada para a seleção: '{selecao}'")
+            print("-" * 100)
+            print(f"Nenhuma unidade encontrada para a seleção: '{selecao}'")
             return None
 
     # 4. Com o nome da unidade em mãos, busca os cursos
