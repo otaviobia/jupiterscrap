@@ -212,6 +212,7 @@ def exbir_todos_cursos(resultado_unidades):
 
         #Exibir informações
         print(f"{nome_unidade}")
+        print("-"*50)
         print(f"{listar_infos(cursos, periodo_ideal, periodo_min, periodo_max)}")
 
 
@@ -221,6 +222,7 @@ def listar_infos(cursos, periodo_ideal, periodo_min, periodo_max):
     for curso in cursos:
         print(f"{curso.getNome()}")
         print(f"Período Mínimo{periodo_min[cont]}, Período ideal: {periodo_ideal[cont]}, Período Max:{periodo_max[cont]}")
+        print("\n")
         cont += 1         
 
 
