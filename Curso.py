@@ -13,4 +13,12 @@ class Curso:
     def getNome(self): 
         return self.nome 
     
+    def getDurIdeal(self):
+        return self.durIdeal
+    
+    def getDurMin(self): 
+        return self.durMin
+
+    def getDurMax(self): 
+        return self.durMax
 

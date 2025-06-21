@@ -190,14 +190,38 @@ def get_span_text(parent_tag, class_name):
     return element.get_text(strip=True) if element else ""     
 
 
+#Funcionalidade 1
 def listar_curso(resultado_unidades, nome):
-
     for unidade in resultado_unidades: 
         if(nome == unidade.getNome()): 
             return [curso.getNome() for curso in unidade.getCursos()]
     
     return None 
 
-def listar_infos(lista): 
-    for value in lista: 
-        print(value)
+
+#TODO Exibir os cursos seria o ideal? 
+
+#Funcionalidade 3 
+def exbir_todos_cursos(resultado_unidades): 
+    for unidade in resultado_unidades: 
+        nome_unidade = unidade.getNome() 
+        cursos = [curso for curso in unidade.getCursos()]
+        periodo_ideal = [durIdeal.getDurIdeal() for durIdeal in cursos]
+        periodo_min = [durMin.getDurMin() for durMin in cursos]
+        periodo_max = [durMax.getDurMax() for durMax in cursos]
+
+        #Exibir informações
+        print(f"{nome_unidade}")
+        print(f"{listar_infos(cursos, periodo_ideal, periodo_min, periodo_max)}")
+
+
+
+def listar_infos(cursos, periodo_ideal, periodo_min, periodo_max): 
+    cont = 0
+    for curso in cursos:
+        print(f"{curso.getNome()}")
+        print(f"Período Mínimo{periodo_min[cont]}, Período ideal: {periodo_ideal[cont]}, Período Max:{periodo_max[cont]}")
+        cont += 1         
+
+
+

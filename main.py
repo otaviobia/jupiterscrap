@@ -1,5 +1,6 @@
 from utils import coletar_dados 
 from utils import listar_curso
+from utils import exbir_todos_cursos
 from utils import listar_infos
 import sys
  
@@ -24,6 +25,7 @@ if __name__ == "__main__":
     print("[3]Exibir dados de todos os cursos")
     print("[4]Dados de uma disciplina, inclusive quais cursos ela faz parte") 
     print("[5]Disciplinas que são usadas em mais de um curso")
+    print("[0]Sair")
 
     print("") 
     print("*-"*50)
@@ -34,11 +36,18 @@ if __name__ == "__main__":
 
         #Selecionar opções 
         match op: 
+            case 0: 
+                print("*-"*50)
+                print("Programa finalizado ")
+                break 
             case 1: 
                 nome_unidade = input("Insria o nome da unidade (Ex: Instituto de Ciências Matemáticas e da Computação - ( ICMC )): ")
                 lista_curso = listar_curso(data, nome_unidade)
-                listar_infos(lista_curso)
-                break
+                for elemento in lista_curso: 
+                    print(elemento)
+            case 3:
+                exbir_todos_cursos(data)
+
             case _: 
                 print("Operação inválida")
 
