@@ -2,6 +2,7 @@ from utils import coletar_dados
 from utils import listar_curso
 from utils import exbir_todos_cursos
 from utils import listar_infos
+from utils import exibir_dados_disciplinas
 import sys
  
 
@@ -32,21 +33,25 @@ if __name__ == "__main__":
     
     #Input do usuário
     while True:  
-        op = int(input(("Digite o número da operação desejada: ")))
+        op = input(("Digite o número da operação desejada: "))
 
         #Selecionar opções 
         match op: 
-            case 0: 
+            case '0': 
                 print("*-"*50)
                 print("Programa finalizado ")
                 break 
-            case 1: 
+            case '1': 
                 nome_unidade = input("Insria o nome da unidade (Ex: Instituto de Ciências Matemáticas e da Computação - ( ICMC )): ")
                 lista_curso = listar_curso(data, nome_unidade)
                 for elemento in lista_curso: 
                     print(elemento)
-            case 3:
+            case '3':
                 exbir_todos_cursos(data)
+
+            case '4': 
+                nome_disciplina = input("Insira o nome da disciplia: ")
+                exibir_dados_disciplinas(data, nome_disciplina)
 
             case _: 
                 print("Operação inválida")

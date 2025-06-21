@@ -9,3 +9,27 @@ class Disciplina:
         self.cargaHorariaEstagio = cargaHorariaEstagio
         self.cargaHorariaPraticas = cargaHorariaPraticas
         self.atividadesAprofundamento = atividadesAprofundamento
+
+    def getNome(self): 
+        return self.nome 
+    
+    def getCodigo(self): 
+        return self.codigo 
+
+    def getCreditosAula(self): 
+        return self.creditosAula 
+    
+    def getCreditosTrabalho(self): 
+        return self.creditosTrabalho
+    
+    def getCargaHoraria(self): 
+        return self.cargaHoraria
+    
+    def getCargaHorariaEstagio(self): 
+        return self.cargaHorariaEstagio
+
+    def getCargaHorariaPraticas(self): 
+        return  self.cargaHorariaPraticas 
+    
+    def getAtividadesAprofundamento(self): 
+        return self.atividadesAprofundamento

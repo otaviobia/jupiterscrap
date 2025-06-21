@@ -104,7 +104,9 @@ def coletar_dados(quantidade = None):
                         unidade=info_curso.get("unidade"),
                         durIdeal=converter_int(info_curso.get("durIdeal")),
                         durMin=converter_int(info_curso.get("durMin")),
-                        durMax=converter_int(info_curso.get("durMax"))
+                        durMax=converter_int(info_curso.get("durMax")), 
+                        disObr = disciplinas 
+                        
                     )
                     
                         unidade.cursos.append(novo_curso)  
@@ -199,13 +201,14 @@ def listar_curso(resultado_unidades, nome):
     return None 
 
 
-#TODO Exibir os cursos seria o ideal? 
+#TODO Tratamento de None 
 
-#Funcionalidade 3 
+#Funcionalidade 3 - Dados de uma disciplina, inclusive quais cursos ela faz parte
 def exbir_todos_cursos(resultado_unidades): 
     for unidade in resultado_unidades: 
         nome_unidade = unidade.getNome() 
         cursos = [curso for curso in unidade.getCursos()]
+        dis_obr = [disciplinas.getDisObr() for disciplinas in cursos]
         periodo_ideal = [durIdeal.getDurIdeal() for durIdeal in cursos]
         periodo_min = [durMin.getDurMin() for durMin in cursos]
         periodo_max = [durMax.getDurMax() for durMax in cursos]
@@ -213,17 +216,53 @@ def exbir_todos_cursos(resultado_unidades):
         #Exibir informações
         print(f"{nome_unidade}")
         print("-"*50)
-        print(f"{listar_infos(cursos, periodo_ideal, periodo_min, periodo_max)}")
+        print(f"{listar_infos(cursos, periodo_ideal, periodo_min, periodo_max, dis_obr)}")
+        
+
+
+#Funcionalidade 4 - Dados de uma disciplina, inclusive quais cursos ela faz parte
+def exibir_dados_disciplinas(resultado_unidades, nome_dis): 
+
+    #Buscar pela disciplina 
+    passou = False
+    lista_cursos = []
+    for unidade in resultado_unidades: 
+        cursos = unidade.getCursos()
+        for curso in cursos: 
+            for disciplina in curso.getDisObr(): 
+                if disciplina.getNome() == nome_dis: 
+                    lista_cursos.append(curso.getNome())
+                    if not passou:
+                        print(f"Nome da Disciplina: {nome_dis}")
+                        print(f"Código: {disciplina.getCodigo()}")
+                        print(f"Créditos Aula: {disciplina.getCreditosAula()}")
+                        print(f"Créditos Trabalho: {disciplina.getCreditosTrabalho()}")
+                        print(f"Carga Horária: {disciplina.getCargaHoraria()}")
+                        print(f"Carga Horária Estágio: {disciplina.getCargaHorariaEstagio()}")
+                        print(f"Carga Horária Práticas: {disciplina.getCargaHorariaPraticas()}") 
+                        print(f"Atividades de Aprofundamento: {disciplina.getAtividadesAprofundamento()}") 
+                        passou = True 
+    
+    print("")
+    print("Cursos que contêm a disciplina:")
+    for curso in lista_cursos: 
+        print(curso)
 
 
 
-def listar_infos(cursos, periodo_ideal, periodo_min, periodo_max): 
+
+def listar_infos(cursos, periodo_ideal, periodo_min, periodo_max, dis_obr): 
     cont = 0
     for curso in cursos:
         print(f"{curso.getNome()}")
         print(f"Período Mínimo{periodo_min[cont]}, Período ideal: {periodo_ideal[cont]}, Período Max:{periodo_max[cont]}")
+        print("DISCIPLINAS OBRIGATÓRIAS:") 
+        print(f"{dis_obr.getNome()}")
         print("\n")
-        cont += 1         
+        cont += 1     
+    
+
+
 
 
 
