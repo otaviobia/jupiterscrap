@@ -197,3 +197,7 @@ def listar_curso(resultado_unidades, nome):
             return [curso.getNome() for curso in unidade.getCursos()]
     
     return None 
+
+def listar_infos(lista): 
+    for value in lista: 
+        print(value)
