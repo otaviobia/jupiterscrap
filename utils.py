@@ -3,7 +3,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-import sys
 from Curso import Curso 
 from Unidade import Unidade 
 from Disciplina import Disciplina
@@ -63,7 +62,7 @@ def coletar_dados(quantidade = None):
         for i in range(1, qnt):
             nome_unidade = lista_unidades[i].text.strip()
 
-            print(f"{nome_unidade}:")
+            #print(f"{nome_unidade}:")
             unidade = Unidade(nome_unidade)
 
             lista_unidades[i].click()
@@ -88,7 +87,7 @@ def coletar_dados(quantidade = None):
                     driver.find_element(By.ID, "step4-tab").click()
                     aguardar_carregamento(driver)
                     try:
-                        WebDriverWait(driver, 1).until(
+                        WebDriverWait(driver, 10).until(
                             lambda d: len(d.find_elements(By.CLASS_NAME, "disciplina")) > 0
                         )
                         # Se passou daqui, tem disciplinas
@@ -98,11 +97,19 @@ def coletar_dados(quantidade = None):
 
                         #Dados das disciplinas
                         disciplinas = dados_disciplinas(soup)
-                        info_curso = dados_curso(soup)     
+                        info_curso = dados_curso(soup) 
 
+                        novo_curso = Curso(
+                        nome=info_curso.get("nome"),
+                        unidade=info_curso.get("unidade"),
+                        durIdeal=converter_int(info_curso.get("durIdeal")),
+                        durMin=converter_int(info_curso.get("durMin")),
+                        durMax=converter_int(info_curso.get("durMax"))
+                    )
+                    
+                        unidade.cursos.append(novo_curso)  
 
-                        # Processa as disciplinas normalmente
-                        print(f"  -> [OK] {nome_curso}")
+     
                     except:
                         # Curso sem disciplinas
                         print(f"  -> [Ok] {nome_curso} (não tem disciplinas)")
@@ -161,18 +168,21 @@ def dados_curso(soup):
     div_curso = soup.find('div', id="step4") 
     
     if not div_curso:
-        return None
+        return {} 
 
-    # Extrai cada informação usando a função auxiliar
-    unidade = get_span_text(div_curso, 'unidade')
-    nome_curso = get_span_text(div_curso, 'curso')
-    dur_ideal = get_span_text(div_curso, 'duridlhab')
-    dur_min = get_span_text(div_curso, 'durminhab')
-    dur_max = get_span_text(div_curso, 'durmaxhab')
+    unidade_str = get_span_text(div_curso, 'unidade')
+    nome_curso_str = get_span_text(div_curso, 'curso')
+    dur_ideal_str = get_span_text(div_curso, 'duridlhab')
+    dur_min_str = get_span_text(div_curso, 'durminhab')
+    dur_max_str = get_span_text(div_curso, 'durmaxhab')
 
-    info_curso = Curso(curso, unidade, dur_ideal, dur_min, dur_max)
-    
-    return info_curso
+    return {
+        "unidade": unidade_str,
+        "nome": nome_curso_str,
+        "durIdeal": dur_ideal_str,
+        "durMin": dur_min_str,
+        "durMax": dur_max_str
+    }
     
 
 def get_span_text(parent_tag, class_name):
@@ -180,11 +190,10 @@ def get_span_text(parent_tag, class_name):
     return element.get_text(strip=True) if element else ""     
 
 
-def listar_curso(resultado_unidades, sigla):
+def listar_curso(resultado_unidades, nome):
 
     for unidade in resultado_unidades: 
-        if(sigla == unidade.getNome()): 
-            resultados_cursos = (unidade.getCursos()).copy()
-            return resultados_cursos
+        if(nome == unidade.getNome()): 
+            return [curso.getNome() for curso in unidade.getCursos()]
     
     return None 

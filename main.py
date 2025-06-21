@@ -1,16 +1,24 @@
 from utils import coletar_dados 
-from utils import sys
+from utils import listar_curso
+import sys
  
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        coletar_dados()
+        data = coletar_dados()
     elif len(sys.argv) == 2:
         unidadesLidas = sys.argv[1]
-        coletar_dados(unidadesLidas)
+        data = coletar_dados(unidadesLidas)
     else:
         print("Uso: python test.py [qtd_unidades]")
+
+    #Teste da primeira função 
+    a = listar_curso(data, "Escola de Artes, Ciências e Humanidades - ( EACH )")
+    print(a)
+
     sys.exit()
+
+
 
 
 
