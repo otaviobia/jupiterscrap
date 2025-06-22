@@ -14,7 +14,7 @@ Entre no diretório venv e ative o ambiente virtual python:
 source bin/activate
 ```
 
-Ainda em venv, instale as dependências 
+No diretório do projeto, instale as dependências 
 ```bash
 pip install -r ./requirements.txt
 ```
