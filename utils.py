@@ -273,7 +273,7 @@ def exbir_todos_cursos(resultado_unidades):
     for unidade in resultado_unidades:
         if not unidade.getCursos(): continue
         print(f"\n\n{'='*20}\nUNIDADE: {unidade.getNome()}\n{'='*20}")
-        listar_infos(unidade.getCursos())
+        listar_infos(unidade.getCursos(), show_unit=False)
 
 def exibir_dados_disciplinas(resultado_unidades, nome_dis):
     """Busca dados de uma disciplina por nome usando fuzzy search."""
@@ -285,7 +285,8 @@ def exibir_dados_disciplinas(resultado_unidades, nome_dis):
     
     matches = difflib.get_close_matches(nome_dis, list(nomes_disciplinas), n=1, cutoff=0.6)
     if not matches:
-        print(f"\nNenhuma disciplina encontrada com nome similar a '{nome_dis}'.")
+        print("-" * 100)
+        print(f"Nenhuma disciplina encontrada com nome similar a '{nome_dis}'.")
         return
         
     best_match_nome = matches[0]
@@ -316,10 +317,12 @@ def exibir_dados_disciplinas(resultado_unidades, nome_dis):
     else:
         print("  Nenhum curso encontrado.")
 
-def listar_infos(cursos):
+def listar_infos(cursos, show_unit=True):
     """Lista as informações de cursos e suas disciplinas obrigatórias."""
     for curso in cursos:
         print(f"\nCURSO: {curso.getNome()}")
+        if show_unit:
+            print(f"  UNIDADE: {curso.unidade}")
         print("-" * 40)
         print(f"  Duração (Mín./Ideal/Máx.): {curso.getDurMin()} / {curso.getDurIdeal()} / {curso.getDurMax()} semestres")
         print("  DISCIPLINAS OBRIGATÓRIAS:")
@@ -330,3 +333,73 @@ def listar_infos(cursos):
                 print(f"    - {disciplina.getNome()} (Cód: {disciplina.getCodigo()})")
         else:
             print("    - Nenhuma disciplina obrigatória encontrada.")
+
+def exibir_dados_curso(resultado_unidades, nome_curso_input):
+    """Busca dados de um curso por nome usando fuzzy search."""
+    todos_cursos = []
+    for unidade in resultado_unidades:
+        todos_cursos.extend(unidade.getCursos())
+
+    nomes_cursos = [curso.getNome() for curso in todos_cursos]
+    if not nomes_cursos:
+        print("\n[AVISO] Nenhum curso encontrado nos dados coletados.")
+        return
+
+    matches = difflib.get_close_matches(nome_curso_input, nomes_cursos, n=1, cutoff=0.6)
+
+    if not matches:
+        print("-" * 100)
+        print(f"Nenhum curso encontrado com nome similar a '{nome_curso_input}'.")
+        return
+
+    best_match_nome = matches[0]
+    curso_encontrado = None
+    for curso in todos_cursos:
+        if curso.getNome() == best_match_nome:
+            curso_encontrado = curso
+            break
+
+    if curso_encontrado:
+        print("-" * 100)
+        print(f"Exibindo dados para o curso correspondente: '{best_match_nome}'")
+        listar_infos([curso_encontrado])
+    else:
+        print(f"\nErro ao tentar recuperar os dados do curso '{best_match_nome}'.")
+
+def exibir_disciplinas_compartilhadas(resultado_unidades):
+    """Exibe disciplinas que são utilizadas em mais de um curso."""
+    disciplina_cursos = {}
+
+    for unidade in resultado_unidades:
+        for curso in unidade.getCursos():
+            for disciplina in curso.getDisObr():
+                codigo_disciplina = disciplina.getCodigo()
+                if codigo_disciplina not in disciplina_cursos:
+                    disciplina_cursos[codigo_disciplina] = {
+                        "nome": disciplina.getNome(),
+                        "cursos": set()
+                    }
+                disciplina_cursos[codigo_disciplina]["cursos"].add(curso.getNome())
+
+    disciplinas_filtradas = []
+    for codigo, dados in disciplina_cursos.items():
+        if len(dados["cursos"]) > 1:
+            disciplinas_filtradas.append({
+                "codigo": codigo,
+                "nome": dados["nome"],
+                "cursos": sorted(list(dados["cursos"]))
+            })
+
+    print("-" * 100)
+    if not disciplinas_filtradas:
+        print("Nenhuma disciplina encontrada em mais de um curso.")
+        return
+
+    disciplinas_filtradas.sort(key=lambda x: x["nome"])
+
+    print("Disciplinas presentes em mais de um curso:")
+    for item in disciplinas_filtradas:
+        print(f"\n- DISCIPLINA: {item['nome']} (Cód: {item['codigo']})")
+        print(f"  Presente em {len(item['cursos'])} cursos:")
+        for nome_curso in item['cursos']:
+            print(f"    - {nome_curso}")

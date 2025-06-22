@@ -3,15 +3,16 @@ from utils import exbir_todos_cursos
 from utils import exibir_dados_disciplinas
 from utils import exibir_lista_unidades
 from utils import obter_cursos_por_selecao
+from utils import exibir_dados_curso, exibir_disciplinas_compartilhadas
 import sys
 
 def mostrar_menu():
     print("-" * 100)
     print("[1] Listar cursos por Unidade")
-    print("[2] Filtrar dados de um determinado curso (Não implementado)")
+    print("[2] Filtrar dados de um determinado curso")
     print("[3] Exibir dados de todos os cursos")
     print("[4] Buscar dados de uma disciplina") 
-    print("[5] Disciplinas que são usadas em mais de um curso (Não implementado)")
+    print("[5] Disciplinas que são usadas em mais de um curso")
     print("[0] Sair")
     print("-" * 100)
 
@@ -66,6 +67,12 @@ def main():
                 
                 # 5. Espera o usuário pressionar Enter
                 esperar_usuario()
+            
+            case '2':
+                print("-" * 100)
+                nome_curso = input("> Insira o nome do curso: ")
+                exibir_dados_curso(data, nome_curso)
+                esperar_usuario()
 
             case '3':
                 exbir_todos_cursos(data)
@@ -75,6 +82,10 @@ def main():
                 print("-" * 100)
                 nome_disciplina = input("> Insira o nome da disciplina: ")
                 exibir_dados_disciplinas(data, nome_disciplina)
+                esperar_usuario()
+
+            case '5':
+                exibir_disciplinas_compartilhadas(data)
                 esperar_usuario()
 
             case _: 
