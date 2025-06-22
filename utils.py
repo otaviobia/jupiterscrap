@@ -51,6 +51,64 @@ def esperar_options_validos(driver, seletor_id, timeout=10):
         return len(valid_options) > 0
     WebDriverWait(driver, timeout).until(_options_validos)
 
+def extrair_todas_disciplinas(soup):
+    """
+    Extrai todas as disciplinas (obrigatórias, eletivas, livres) de uma vez,
+    percorrendo a grade curricular e mudando de 'seção' ao encontrar um cabeçalho.
+    """
+    obrigatorias = []
+    eletivas = []
+    livres = []
+    
+    div_grade = soup.find('div', id='gradeCurricular')
+    if not div_grade:
+        return obrigatorias, eletivas, livres
+
+    current_section = None
+    all_rows = div_grade.find_all('tr')
+
+    for linha in all_rows:
+        linha_text = linha.get_text().strip().lower()
+
+        # Verifica se a linha é um cabeçalho de seção
+        is_header = False
+        if 'disciplinas obrigatórias' in linha_text:
+            current_section = 'obrigatorias'
+            is_header = True
+        elif 'disciplinas optativas eletivas' in linha_text:
+            current_section = 'eletivas'
+            is_header = True
+        elif 'disciplinas optativas livres' in linha_text:
+            current_section = 'livres'
+            is_header = True
+        
+        # Se for um cabeçalho, pula para a próxima iteração
+        if is_header:
+            continue
+
+        # Se não for um cabeçalho, tenta processar como uma disciplina
+        celulas = linha.find_all('td')
+        if len(celulas) == 8:
+            codigo = celulas[0].text.strip()
+            nome = celulas[1].text.strip()
+            
+            # Garante que não é uma linha vazia ou de formatação
+            if codigo and nome:
+                disciplina = Disciplina(codigo, nome, converter_int(celulas[2].text.strip()), 
+                                      converter_int(celulas[3].text.strip()), converter_int(celulas[4].text.strip()), 
+                                      converter_int(celulas[5].text.strip()), converter_int(celulas[6].text.strip()), 
+                                      converter_int(celulas[7].text.strip()))
+                
+                # Adiciona à lista da seção atual
+                if current_section == 'obrigatorias':
+                    obrigatorias.append(disciplina)
+                elif current_section == 'eletivas':
+                    eletivas.append(disciplina)
+                elif current_section == 'livres':
+                    livres.append(disciplina)
+
+    return obrigatorias, eletivas, livres
+
 def coletar_dados(quantidade = None):
     """
     Coleta os dados do JupiterWeb, exibindo uma linha de progresso detalhada
@@ -129,19 +187,25 @@ def coletar_dados(quantidade = None):
                         WebDriverWait(driver, 5).until(lambda d: len(d.find_elements(By.CLASS_NAME, "disciplina")) > 0)
                         html_content = driver.page_source
                         soup = BeautifulSoup(html_content, "html.parser")
-                        disciplinas = dados_disciplinas(soup)
+                        
+                        # Extração de todos os tipos de disciplinas com a nova função
+                        obrigatorias, eletivas, livres = extrair_todas_disciplinas(soup)
+
                         info_curso = dados_curso(soup)
                         novo_curso = Curso(
                             nome=info_curso.get("nome"), unidade=info_curso.get("unidade"),
                             durIdeal=converter_int(info_curso.get("durIdeal")),
                             durMin=converter_int(info_curso.get("durMin")),
                             durMax=converter_int(info_curso.get("durMax")), 
-                            disObr=disciplinas 
+                            disObr=obrigatorias,
+                            disOptElet=eletivas,
+                            disOptLiv=livres
                         )
                         unidade.cursos.append(novo_curso)
                     except TimeoutException:
                         pass
-                except Exception:
+                except Exception as e:
+                    print(f"\nOcorreu um erro inesperado ao processar o curso {nome_curso}: {e}")
                     pass
                 finally:
                     aguardar_carregamento(driver)
@@ -150,7 +214,7 @@ def coletar_dados(quantidade = None):
             
             resultado_unidades.append(unidade)
 
-        print("".ljust(padding_final), end='\r')
+        print("".ljust(padding_final + 10), end='\r')
 
     finally:
         execution_time = time.time() - start
@@ -164,22 +228,6 @@ def converter_int(value):
         return int(value)
     except (ValueError, TypeError):
         return 0
-
-def dados_disciplinas(soup):
-    listar_disciplinas = []
-    div_grade = soup.find('div', id='gradeCurricular')
-    if div_grade:
-        for linha in div_grade.find_all('tr'):
-            celulas = linha.find_all('td')
-            if len(celulas) == 8:
-                codigo = celulas[0].text.strip()
-                nome = celulas[1].text.strip()
-                disciplina = Disciplina(codigo, nome, converter_int(celulas[2].text.strip()), 
-                                      converter_int(celulas[3].text.strip()), converter_int(celulas[4].text.strip()), 
-                                      converter_int(celulas[5].text.strip()), converter_int(celulas[6].text.strip()), 
-                                      converter_int(celulas[7].text.strip()))
-                listar_disciplinas.append(disciplina)
-    return listar_disciplinas
 
 def dados_curso(soup):
     div_curso = soup.find('div', id="step4")
@@ -280,7 +328,9 @@ def exibir_dados_disciplinas(resultado_unidades, nome_dis):
     nomes_disciplinas = set()
     for unidade in resultado_unidades:
         for curso in unidade.getCursos():
-            for disciplina in curso.getDisObr():
+            # Adiciona todos os tipos de disciplinas ao conjunto para busca
+            todas_as_disciplinas = curso.getDisObr() + curso.getDisOptElet() + curso.getDisOptLiv()
+            for disciplina in todas_as_disciplinas:
                 nomes_disciplinas.add(disciplina.getNome())
     
     matches = difflib.get_close_matches(nome_dis, list(nomes_disciplinas), n=1, cutoff=0.6)
@@ -290,18 +340,17 @@ def exibir_dados_disciplinas(resultado_unidades, nome_dis):
         return
         
     best_match_nome = matches[0]
-    passou = False
-    lista_cursos_com_disciplina = []
     disciplina_encontrada = None
+    lista_cursos_com_disciplina = []
     
     for unidade in resultado_unidades:
         for curso in unidade.getCursos():
-            for disciplina in curso.getDisObr():
+            todas_as_disciplinas = curso.getDisObr() + curso.getDisOptElet() + curso.getDisOptLiv()
+            for disciplina in todas_as_disciplinas:
                 if disciplina.getNome() == best_match_nome:
                     lista_cursos_com_disciplina.append(curso.getNome())
-                    if not passou:
+                    if not disciplina_encontrada:
                         disciplina_encontrada = disciplina
-                        passou = True
     
     if disciplina_encontrada:
         print("-" * 100)
@@ -313,26 +362,48 @@ def exibir_dados_disciplinas(resultado_unidades, nome_dis):
     
     print("\nCursos que contêm esta disciplina:")
     if lista_cursos_com_disciplina:
-        for curso in sorted(list(set(lista_cursos_com_disciplina))): print(f"  - {curso}")
+        for curso in sorted(list(set(lista_cursos_com_disciplina))): 
+            print(f"  - {curso}")
     else:
         print("  Nenhum curso encontrado.")
 
+
 def listar_infos(cursos, show_unit=True):
-    """Lista as informações de cursos e suas disciplinas obrigatórias."""
+    """Lista as informações de cursos e suas disciplinas obrigatórias, eletivas e livres."""
     for curso in cursos:
         print(f"\nCURSO: {curso.getNome()}")
         if show_unit:
             print(f"  UNIDADE: {curso.unidade}")
         print("-" * 40)
         print(f"  Duração (Mín./Ideal/Máx.): {curso.getDurMin()} / {curso.getDurIdeal()} / {curso.getDurMax()} semestres")
-        print("  DISCIPLINAS OBRIGATÓRIAS:")
-        
-        disciplinas_do_curso = curso.getDisObr()
-        if disciplinas_do_curso:
-            for disciplina in disciplinas_do_curso:
+
+        # Exibe Disciplinas Obrigatórias
+        disciplinas_obrigatorias = curso.getDisObr()
+        print("\n  DISCIPLINAS OBRIGATÓRIAS:")
+        if disciplinas_obrigatorias:
+            for disciplina in disciplinas_obrigatorias:
                 print(f"    - {disciplina.getNome()} (Cód: {disciplina.getCodigo()})")
         else:
             print("    - Nenhuma disciplina obrigatória encontrada.")
+
+        # Exibe Disciplinas Optativas Eletivas
+        disciplinas_eletivas = curso.getDisOptElet()
+        print("\n  DISCIPLINAS OPTATIVAS ELETIVAS:")
+        if disciplinas_eletivas:
+            for disciplina in disciplinas_eletivas:
+                print(f"    - {disciplina.getNome()} (Cód: {disciplina.getCodigo()})")
+        else:
+            print("    - Nenhuma disciplina optativa eletiva encontrada.")
+
+        # Exibe Disciplinas Optativas Livres
+        disciplinas_livres = curso.getDisOptLiv()
+        print("\n  DISCIPLINAS OPTATIVAS LIVRES:")
+        if disciplinas_livres:
+            for disciplina in disciplinas_livres:
+                print(f"    - {disciplina.getNome()} (Cód: {disciplina.getCodigo()})")
+        else:
+            print("    - Nenhuma disciplina optativa livre encontrada.")
+
 
 def exibir_dados_curso(resultado_unidades, nome_curso_input):
     """Busca dados de um curso por nome usando fuzzy search."""
@@ -372,7 +443,9 @@ def exibir_disciplinas_compartilhadas(resultado_unidades):
 
     for unidade in resultado_unidades:
         for curso in unidade.getCursos():
-            for disciplina in curso.getDisObr():
+            # Considera todos os tipos de disciplinas
+            todas_as_disciplinas = curso.getDisObr() + curso.getDisOptElet() + curso.getDisOptLiv()
+            for disciplina in todas_as_disciplinas:
                 codigo_disciplina = disciplina.getCodigo()
                 if codigo_disciplina not in disciplina_cursos:
                     disciplina_cursos[codigo_disciplina] = {
